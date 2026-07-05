@@ -1,8 +1,20 @@
 # STAF (Spatio-Temporal Attention Framework)
 
-STAF is a state-of-the-art multimodal AI forensics framework designed for detecting audio-visual deepfakes, face swaps, lip-sync manipulation, and other generative media attacks. 
+An open-source PyTorch framework for multimodal deepfake detection using joint audio-visual reasoning.
 
-Developed under a clean, modular, and reproducible architecture, STAF provides research-grade and production-ready tools for media forensics.
+## Current Status
+
+* **✓ Modular preprocessing pipeline**: Multi-threaded frame extraction, audio extraction, face detection (RetinaFace), face alignment, and modality synchronization.
+* **✓ FakeAVCeleb support**: Standard loaders, data generators, and subject-independent splits.
+* **✓ Baseline multimodal detector**: Spatial-temporal visual and audio branches fused via late concatenation.
+* **✓ Training and evaluation framework**: Fully verified training/validation loops with AMP, TensorBoard support, and evaluator generating ROC/PR curves and confusion matrices.
+
+## Roadmap
+
+* **GPU training**: Port verified pipeline to Google Colab / Kaggle for full baseline training.
+* **Cross-dataset evaluation**: Testing baseline on out-of-domain benchmarks.
+* **STAF architecture**: Design and implement the spatio-temporal attention modules.
+* **Explainability**: Integrate attention rollout and activation map visualization.
 
 ## Project Structure
 
