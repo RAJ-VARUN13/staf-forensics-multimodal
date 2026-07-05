@@ -168,6 +168,7 @@ class DataConfig:
     num_workers: int = 4
     pin_memory: bool = True
     prefetch_factor: int = 2
+    persistent_workers: bool = True
 
 
 # =============================================================================

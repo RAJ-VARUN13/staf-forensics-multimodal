@@ -76,6 +76,25 @@ python -m staf.training.train --config staf/configs/baseline.yaml \
     training.optimizer.learning_rate=5e-4
 ```
 
+
+---
+
+## Running STAF on Google Colab
+
+To easily train and evaluate the STAF baseline model on Google Colab with GPU acceleration:
+
+1. **Jupyter Notebook**: Open [STAF_Training_Colab.ipynb](file:///c:/Users/Varun/OneDrive/Desktop/Multimodal Deepfake/staf/notebooks/STAF_Training_Colab.ipynb) in Google Colab.
+2. **Dataset Setup**: Upload the `FakeAVCeleb_v1.2.zip` dataset to your Google Drive. 
+3. **Mount Google Drive**: Execute the first cell in the notebook to mount your Google Drive at `/content/drive`.
+4. **Environment Settings**: The notebook uses [colab.yaml](file:///c:/Users/Varun/OneDrive/Desktop/Multimodal Deepfake/staf/configs/colab.yaml) config file which is optimized for Google Colab environment directories:
+   * Sets data paths to `/content/FakeAVCeleb` and local outputs to `/content/results`
+   * Automatically selects `cuda` GPU execution
+   * Enables mixed precision (`AMP`)
+   * Maximizes dataloader throughput with 4 persistent workers and pinned memory
+5. **Run Preprocessing**: Run the preprocessing cell. Since it runs on a CUDA GPU, face detection and cropping will run extremely fast (typically `<0.02s per frame`).
+6. **Train & Evaluate**: Run the training and evaluation cells. The model checkpoints, local logs, and evaluation metrics/plots will be stored under `/content/results/`.
+7. **Safe Backup**: Run the final cell to copy all checkpoints and evaluation plots persistently to your Google Drive under `/content/drive/MyDrive/STAF_experiments/`.
+
 ---
 
 ## Core Philosophy

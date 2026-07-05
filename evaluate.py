@@ -115,7 +115,8 @@ def main() -> None:
         batch_size=cfg.data.batch_size,
         shuffle=False,
         num_workers=cfg.data.num_workers,
-        pin_memory=cfg.data.pin_memory
+        pin_memory=cfg.data.pin_memory,
+        persistent_workers=getattr(cfg.data, "persistent_workers", False) if cfg.data.num_workers > 0 else False
     )
 
     logger.info(f"Loaded {len(test_dataset)} evaluation samples.")

@@ -130,6 +130,7 @@ def main() -> None:
         num_workers=cfg.data.num_workers,
         pin_memory=cfg.data.pin_memory,
         prefetch_factor=cfg.data.prefetch_factor if cfg.data.num_workers > 0 else None,
+        persistent_workers=getattr(cfg.data, "persistent_workers", False) if cfg.data.num_workers > 0 else False,
         drop_last=len(train_dataset) >= cfg.data.batch_size
     )
 
@@ -139,7 +140,8 @@ def main() -> None:
         shuffle=False,
         num_workers=cfg.data.num_workers,
         pin_memory=cfg.data.pin_memory,
-        prefetch_factor=cfg.data.prefetch_factor if cfg.data.num_workers > 0 else None
+        prefetch_factor=cfg.data.prefetch_factor if cfg.data.num_workers > 0 else None,
+        persistent_workers=getattr(cfg.data, "persistent_workers", False) if cfg.data.num_workers > 0 else False
     )
 
     logger.info(f"Dataset summary:")

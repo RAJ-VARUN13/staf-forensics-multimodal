@@ -1,0 +1,132 @@
+# =============================================================================
+# STAF Google Colab Configuration
+# =============================================================================
+# Optimized environment configuration for Google Colab GPU runtimes.
+# Inherits default structure from staf.configs.schema.STAFConfig.
+#
+# Load via train.py:
+#   python train.py --config staf/configs/colab.yaml
+# =============================================================================
+
+experiment_name: "colab_baseline_run"
+description: >
+  Dual-stream baseline model optimized for training on Google Colab with
+  GPU acceleration. Features CUDA execution, mixed precision (AMP), and 
+  maximized DataLoader throughput.
+
+# --- Data Pipeline ---
+data:
+  paths:
+    fakeavceleb_root: "/content/FakeAVCeleb"
+    fakeavceleb_metadata_csv: "/content/FakeAVCeleb/meta_data.csv"
+    processed_dir: "/content/data/processed"
+    splits_dir: "/content/data/splits"
+
+  # Sampling and sizes
+  num_frames: 16
+  frame_sampling_strategy: "uniform"
+  face_detector: "retinaface"
+  image_size: 224
+  face_margin: 0.3
+  face_alignment_enabled: true
+  preprocessing_version: "v1.0"
+
+  # Audio details
+  audio_sample_rate: 16000
+  audio_max_duration_sec: 5.0
+  audio_normalize: true
+
+  # Ratios and seed
+  train_ratio: 0.7
+  val_ratio: 0.15
+  test_ratio: 0.15
+  split_seed: 42
+  subject_independent: true
+
+  # DataLoader Colab Optimizations
+  batch_size: 16
+  num_workers: 4
+  pin_memory: true
+  prefetch_factor: 2
+  persistent_workers: true
+
+# --- Model Architecture ---
+model:
+  type: "baseline"
+  
+  visual:
+    backbone: "efficientnet_b0"
+    pretrained: true
+    frozen: true
+    output_dim: 1280
+
+  audio:
+    backbone: "facebook/wav2vec2-base-960h"
+    pretrained: true
+    frozen: true
+    output_dim: 768
+
+  temporal:
+    pooling: "lstm"
+    attention_heads: 4
+    attention_dropout: 0.1
+
+  fusion:
+    strategy: "late_concat"
+    hidden_dims: [512]
+    dropout: 0.3
+    activation: "relu"
+    use_layer_norm: true
+
+  num_classes: 2
+  classifier_dropout: 0.2
+
+# --- Training Setup ---
+training:
+  optimizer:
+    name: "adamw"
+    learning_rate: 1e-3
+    weight_decay: 1e-4
+
+  scheduler:
+    name: "cosine"
+    warmup_epochs: 2
+    min_lr: 1e-7
+
+  max_epochs: 30
+  min_epochs: 5
+  early_stopping_patience: 7
+  early_stopping_metric: "val_auc"
+  early_stopping_mode: "max"
+
+  use_amp: true
+  gradient_clip_val: 1.0
+  accumulate_grad_batches: 1
+  loss_function: "bce_with_logits"
+
+  save_top_k: 3
+  checkpoint_metric: "val_auc"
+  checkpoint_mode: "max"
+
+  seed: 42
+  deterministic: true
+
+# --- Local & W&B Tracking ---
+logging:
+  level: "INFO"
+  log_dir: "logs"
+  log_to_file: true
+  log_to_console: true
+  
+  wandb:
+    enabled: false  # Disable by default, enable inside Colab notebook if desired
+    project: "staf-deepfake-detection"
+    run_name: "colab_baseline_run"
+    tags: ["baseline", "colab"]
+    notes: "Baseline model run on Colab GPU"
+    log_model: true
+
+# --- Hardware configuration ---
+device: "auto"
+num_gpus: 1
+output_dir: "/content/results"
