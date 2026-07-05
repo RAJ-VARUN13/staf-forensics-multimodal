@@ -1,0 +1,132 @@
+# =============================================================================
+# STAF Baseline Experiment: Version 1 (baseline_v1)
+# =============================================================================
+# Configuration for the first reproducible dual-stream baseline training run.
+# Inherits structure from staf.configs.schema.STAFConfig.
+#
+# Execute via CLI:
+#   python train.py --config experiments/baseline_v1.yaml
+# =============================================================================
+
+experiment_name: "baseline_v1"
+description: >
+  Dual-stream baseline model (baseline_v1) trained on FakeAVCeleb dataset.
+  Uses frozen EfficientNet-B0 (visual) and frozen Wav2Vec2 Base (audio).
+  Visual temporal aggregation is handled by a BiLSTM. Concatenation fusion is followed
+  by LayerNorm and an MLP classifier.
+
+# --- Data Pipeline ---
+data:
+  paths:
+    fakeavceleb_root: "staf/datasets/FakeAVCeleb_v1.2-17-Mar/FakeAVCeleb_v1.2"
+    fakeavceleb_metadata_csv: "staf/datasets/FakeAVCeleb_v1.2-17-Mar/FakeAVCeleb_v1.2/meta_data.csv"
+    processed_dir: "data/processed"
+    splits_dir: "data/splits"
+
+  # Sampling and sizes
+  num_frames: 16
+  frame_sampling_strategy: "uniform"
+  face_detector: "retinaface"
+  image_size: 224
+  face_margin: 0.3
+  face_alignment_enabled: true
+  preprocessing_version: "v1.0"
+
+  # Audio details
+  audio_sample_rate: 16000
+  audio_max_duration_sec: 5.0  # Cap at 5.0 seconds for faster sequence batches
+  audio_normalize: true
+
+  # Ratios and seed
+  train_ratio: 0.7
+  val_ratio: 0.15
+  test_ratio: 0.15
+  split_seed: 42
+  subject_independent: true
+
+  # DataLoader
+  batch_size: 8  # Moderate batch size for resource safety
+  num_workers: 2
+  pin_memory: true
+  prefetch_factor: 2
+
+# --- Model Architecture ---
+model:
+  type: "baseline"
+  
+  visual:
+    backbone: "efficientnet_b0"
+    pretrained: true
+    frozen: true
+    output_dim: 1280
+
+  audio:
+    backbone: "facebook/wav2vec2-base-960h"
+    pretrained: true
+    frozen: true
+    output_dim: 768
+
+  temporal:
+    pooling: "lstm"  # BiLSTM temporal visual model
+    attention_heads: 4
+    attention_dropout: 0.1
+
+  fusion:
+    strategy: "late_concat"
+    hidden_dims: [256]
+    dropout: 0.3
+    activation: "relu"
+    use_layer_norm: true
+
+  num_classes: 2
+  classifier_dropout: 0.2
+
+# --- Training Setup ---
+training:
+  optimizer:
+    name: "adamw"
+    learning_rate: 1e-3
+    weight_decay: 1e-4
+
+  scheduler:
+    name: "cosine"
+    warmup_epochs: 1
+    min_lr: 1e-6
+
+  max_epochs: 5  # Verification training run
+  min_epochs: 1
+  early_stopping_patience: 3
+  early_stopping_metric: "val_auc"
+  early_stopping_mode: "max"
+
+  use_amp: true
+  gradient_clip_val: 1.0
+  accumulate_grad_batches: 1
+  loss_function: "bce_with_logits"
+
+  save_top_k: 2
+  checkpoint_metric: "val_auc"
+  checkpoint_mode: "max"
+
+  seed: 42
+  deterministic: true
+
+# --- Local & W&B Tracking ---
+logging:
+  level: "INFO"
+  log_dir: "logs"
+  log_to_file: true
+  log_to_console: true
+  
+  wandb:
+    enabled: false  # Disabled by default, override via train.py overrides if wanted
+    project: "staf-deepfake-detection"
+    run_name: "baseline_v1_run"
+    tags: ["baseline", "v1"]
+    notes: "First baseline training run using BiLSTM pooling and late concat"
+    log_model: false
+
+# --- Hardware configuration ---
+device: "auto"
+num_gpus: 1
+output_dir: "results"

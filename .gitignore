@@ -1,0 +1,32 @@
+# Virtual environment
+.venv/
+venv/
+ENV/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Data and large datasets
+data/
+staf/datasets/FakeAVCeleb*
+staf/datasets/Spatio*
+
+# Local results, checkpoints and logs
+results/
+logs/
+experiments/*
+!experiments/*.yaml
+
+# IDEs and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Caching and testing
+.pytest_cache/
+.coverage
+htmlcov/

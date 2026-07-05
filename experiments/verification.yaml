@@ -1,0 +1,114 @@
+# =============================================================================
+# STAF Verification Configuration
+# =============================================================================
+# Lightweight configuration to run a fast end-to-end training and evaluation
+# verification on a tiny dataset subset.
+# =============================================================================
+
+experiment_name: "verification_run"
+description: "Lightweight verification of data loader, forward, backward, training and evaluation pipeline."
+
+# --- Data Pipeline ---
+data:
+  paths:
+    fakeavceleb_root: "staf/datasets/subset"
+    fakeavceleb_metadata_csv: ""
+    processed_dir: "data/processed_subset"
+    splits_dir: "data/splits_subset"
+
+  # Minimal parameters for speed
+  num_frames: 4
+  frame_sampling_strategy: "uniform"
+  face_detector: "retinaface"
+  image_size: 224
+  face_margin: 0.3
+  face_alignment_enabled: true
+  preprocessing_version: "v1.0_verification"
+
+  audio_sample_rate: 16000
+  audio_max_duration_sec: 2.0
+  audio_normalize: true
+
+  # Ratios (small dataset, split subject-independently)
+  train_ratio: 0.5
+  val_ratio: 0.25
+  test_ratio: 0.25
+  split_seed: 42
+  subject_independent: false  # Disable subject independent split for 2 videos to ensure splits are populated
+
+  batch_size: 2
+  num_workers: 0
+  pin_memory: false
+
+# --- Model Architecture ---
+model:
+  type: "baseline"
+  
+  visual:
+    backbone: "efficientnet_b0"
+    pretrained: false  # No downloads
+    frozen: true
+    output_dim: 1280
+
+  audio:
+    backbone: "facebook/wav2vec2-base-960h"
+    pretrained: false  # No downloads
+    frozen: true
+    output_dim: 768
+
+  temporal:
+    pooling: "lstm"
+    attention_heads: 2
+    attention_dropout: 0.0
+
+  fusion:
+    strategy: "late_concat"
+    hidden_dims: [64]
+    dropout: 0.1
+    activation: "relu"
+    use_layer_norm: true
+
+  num_classes: 2
+  classifier_dropout: 0.1
+
+# --- Training Setup ---
+training:
+  optimizer:
+    name: "adamw"
+    learning_rate: 1e-3
+    weight_decay: 1e-5
+
+  scheduler:
+    name: "cosine"
+    warmup_epochs: 0
+    min_lr: 1e-4
+
+  max_epochs: 2
+  min_epochs: 1
+  early_stopping_patience: 2
+  early_stopping_metric: "val_loss"
+  early_stopping_mode: "min"
+
+  use_amp: false
+  gradient_clip_val: 1.0
+  accumulate_grad_batches: 1
+  loss_function: "bce_with_logits"
+
+  save_top_k: 1
+  checkpoint_metric: "val_loss"
+  checkpoint_mode: "min"
+
+  seed: 42
+  deterministic: true
+
+logging:
+  level: "INFO"
+  log_dir: "logs"
+  log_to_file: true
+  log_to_console: true
+  wandb:
+    enabled: false
+
+device: "cpu"
+num_gpus: 0
+output_dir: "results"

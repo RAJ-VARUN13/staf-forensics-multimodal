@@ -1,0 +1,164 @@
+# =============================================================================
+# STAF Baseline Configuration
+# =============================================================================
+# Default configuration for the dual-stream late-fusion baseline detector.
+# This file is loaded by staf.configs.schema.load_config().
+#
+# Override any value via CLI:
+#   python -m staf.training.train --config configs/baseline.yaml \
+#       training.max_epochs=50 training.optimizer.learning_rate=5e-4
+# =============================================================================
+
+experiment_name: "staf_baseline_v0.1"
+description: >
+  Dual-stream late-fusion baseline with EfficientNet-B0 (visual) and
+  Wav2Vec 2.0 Base (audio). Frozen backbones, attention pooling, MLP fusion.
+  Binary classification (Real vs. Fake) on FakeAVCeleb.
+
+# --- Data Pipeline ---
+data:
+  paths:
+    fakeavceleb_root: "staf/datasets/FakeAVCeleb_v1.2-17-Mar/FakeAVCeleb_v1.2"
+    fakeavceleb_metadata_csv: "staf/datasets/FakeAVCeleb_v1.2-17-Mar/FakeAVCeleb_v1.2/meta_data.csv"
+    professor_root: ""    # SET THIS: path to professor's dataset directory
+    processed_dir: "data/processed"
+    splits_dir: "data/splits"
+
+  num_frames: 16
+  frame_sampling_strategy: "uniform"
+  face_detector: "retinaface"
+  image_size: 224
+  face_margin: 0.3
+  face_alignment_enabled: true
+  preprocessing_version: "v1.0"
+
+  audio_sample_rate: 16000
+  audio_max_duration_sec: 10.0
+  audio_normalize: true
+
+  # Augmentation (reserved — not implemented yet)
+  augmentation:
+    enabled: false
+    rotation_degrees: 10.0
+    horizontal_flip_prob: 0.5
+    brightness_range: 0.2
+    contrast_range: 0.2
+    saturation_range: 0.1
+    gaussian_noise_std: 0.01
+    jpeg_quality_range_low: 70
+    jpeg_quality_range_high: 100
+    gaussian_blur_kernel: 3
+    gaussian_blur_prob: 0.1
+    compression_level: 23
+
+  train_ratio: 0.7
+  val_ratio: 0.15
+  test_ratio: 0.15
+  split_seed: 42
+  subject_independent: true
+
+  batch_size: 16
+  num_workers: 4
+  pin_memory: true
+  prefetch_factor: 2
+
+# --- Model Architecture ---
+model:
+  type: "baseline"
+  visual:
+    backbone: "efficientnet_b0"
+    pretrained: true
+    frozen: true
+    output_dim: 1280
+
+  audio:
+    backbone: "wav2vec2_base"
+    pretrained: true
+    frozen: true
+    output_dim: 768
+
+  temporal:
+    pooling: "attention"
+    attention_heads: 4
+    attention_dropout: 0.1
+
+  fusion:
+    strategy: "late_concat"
+    hidden_dims: [512]
+    dropout: 0.3
+    activation: "relu"
+    use_layer_norm: true
+
+  num_classes: 2
+  classifier_dropout: 0.2
+
+# --- Training ---
+training:
+  optimizer:
+    name: "adamw"
+    learning_rate: 1.0e-3
+    weight_decay: 1.0e-4
+    betas: [0.9, 0.999]
+
+  scheduler:
+    name: "cosine"
+    warmup_epochs: 2
+    min_lr: 1.0e-7
+
+  max_epochs: 30
+  min_epochs: 5
+  early_stopping_patience: 7
+  early_stopping_metric: "val_auc"
+  early_stopping_mode: "max"
+
+  use_amp: true
+  gradient_clip_val: 1.0
+  accumulate_grad_batches: 1
+
+  save_top_k: 3
+  checkpoint_metric: "val_auc"
+  checkpoint_mode: "max"
+
+  loss_function: "bce_with_logits"
+  class_weights: null  # Auto-computed from dataset
+  focal_gamma: 2.0
+
+  seed: 42
+  deterministic: true
+
+# --- Evaluation ---
+evaluation:
+  metrics:
+    - accuracy
+    - precision
+    - recall
+    - f1
+    - roc_auc
+    - confusion_matrix
+    - roc_curve
+    - pr_curve
+  binary_threshold: 0.5
+  save_predictions: true
+  save_plots: true
+  plot_format: "png"
+  plot_dpi: 150
+
+# --- Logging ---
+logging:
+  level: "INFO"
+  log_dir: "logs"
+  log_to_file: true
+  log_to_console: true
+  wandb:
+    enabled: true
+    project: "staf-deepfake-detection"
+    entity: ""
+    run_name: ""
+    tags: ["baseline", "v0.1"]
+    notes: "Baseline dual-stream late-fusion detector"
+    log_model: true
+
+# --- Hardware ---
+device: "auto"
+num_gpus: 1
+output_dir: "experiments"
