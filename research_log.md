@@ -19,3 +19,16 @@ This log documents daily milestones, observations, and experimental results in t
   * Verified forward pass, backward pass, BCE loss calculation, validation metrics computation, checkpointing, and evaluation pipeline on CPU.
   * Verified loss decreases over training epochs (**0.5484 → 0.1377**, a **74.9%** decrease).
 * **Next Step**: Push verified framework to GitHub, mount dataset in Google Colab / Kaggle GPU environment, run GPU-accelerated preprocessing, train baseline on full dataset, and conduct error analysis of baseline predictions before proposing STAF modifications.
+
+---
+
+## 2026-07-07
+* **Milestone**: Resolved repository import inconsistency by restoring the `staf/datasets/fakeavceleb.py` module.
+* **Root Cause & Fix**:
+  * Found that case-insensitive `.gitignore` matching on Windows (`staf/datasets/FakeAVCeleb*`) was silently ignoring the `fakeavceleb.py` module.
+  * Corrected `.gitignore` patterns and added `!staf/datasets/*.py` to prevent code source ignoring.
+  * Staged, committed, and pushed the restored dataset loader to the remote repository.
+* **Verification**:
+  * Executed the complete test suite (`pytest staf/tests/`) in the virtual environment. **All 38 tests passed successfully**.
+  * Verified that running `python train.py --help` starts correctly and prints options without any import issues.
+
