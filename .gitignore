@@ -11,8 +11,9 @@ __pycache__/
 
 # Data and large datasets
 data/
-staf/datasets/FakeAVCeleb*
+staf/datasets/FakeAVCeleb_v1.2*
 staf/datasets/Spatio*
+!staf/datasets/*.py
 
 # Local results, checkpoints and logs
 results/
